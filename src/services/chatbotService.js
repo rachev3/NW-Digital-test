@@ -94,7 +94,7 @@ export const chatbotService = {
         await historyService.updateCurrentBlock(sessionId, nextBlockId);
 
         // Process the next block
-        return await this.processBlock(nextBlock, sessionId, config);
+        return await this.processBlock(nextBlock, sessionId, config, message);
       } else if (currentBlock.type === "detect_intent") {
         // Use OpenAI to detect the intent
         const userMessage = message.text || JSON.stringify(message);
@@ -105,6 +105,8 @@ export const chatbotService = {
             keywords: intent.keywords,
           }))
         );
+
+        console.log("Detected intent:", detectedIntent);
 
         // Find the matching intent
         const matchingIntent = currentBlock.intents.find(
@@ -159,9 +161,10 @@ export const chatbotService = {
    * @param {Object} block - The block to process
    * @param {string} sessionId - The session ID
    * @param {Object} config - The chatbot configuration
+   * @param {Object} userMessage - The user message (if available)
    * @returns {Promise<Object>} - The response
    */
-  async processBlock(block, sessionId, config) {
+  async processBlock(block, sessionId, config, userMessage = null) {
     try {
       // Process the block based on its type
       switch (block.type) {
@@ -174,7 +177,7 @@ export const chatbotService = {
             blockId: block.id,
           });
 
-          // If there's a next block, process it
+          // If there's a next block, process it but ONLY if it's not a wait or detect_intent
           if (block.next) {
             // Get the next block
             const nextBlock = config.blocks.find((b) => b.id === block.next);
@@ -186,7 +189,19 @@ export const chatbotService = {
             // Update the current block in the session
             await historyService.updateCurrentBlock(sessionId, block.next);
 
-            // Process the next block
+            // If next block is wait or detect_intent, don't process it immediately
+            // This ensures the message is sent to the client first
+            if (
+              nextBlock.type === "wait" ||
+              nextBlock.type === "detect_intent"
+            ) {
+              return {
+                type: "message",
+                message: block.message,
+              };
+            }
+
+            // Process the next block (only for non-interactive blocks)
             return await this.processBlock(nextBlock, sessionId, config);
           }
 
@@ -199,7 +214,7 @@ export const chatbotService = {
         case "wait":
           // Update the current block in the session
           await historyService.updateCurrentBlock(sessionId, block.id);
-
+          console.log("it is in wait block");
           // Return a prompt for the user
           return {
             type: "prompt",
@@ -207,9 +222,53 @@ export const chatbotService = {
           };
 
         case "detect_intent":
+          // If we have a user message and we're in detect_intent block, process it immediately
+          if (userMessage) {
+            const userText = userMessage.text || JSON.stringify(userMessage);
+            const detectedIntent = await openaiService.detectIntent(
+              userText,
+              block.intents.map((intent) => ({
+                intent: intent.intent,
+                keywords: intent.keywords,
+              }))
+            );
+
+            console.log("Directly detected intent:", detectedIntent);
+
+            // Find the matching intent
+            const matchingIntent = block.intents.find(
+              (intent) => intent.intent === detectedIntent
+            );
+
+            // Get the next block ID
+            let nextBlockId;
+
+            if (matchingIntent) {
+              nextBlockId = matchingIntent.next;
+            } else {
+              // Use fallback if no intent matches
+              nextBlockId = block.fallback;
+            }
+
+            // Get the next block
+            const nextBlock = config.blocks.find(
+              (block) => block.id === nextBlockId
+            );
+
+            if (!nextBlock) {
+              throw new Error(`Next block with ID ${nextBlockId} not found`);
+            }
+
+            // Update the current block in the session
+            await historyService.updateCurrentBlock(sessionId, nextBlockId);
+
+            // Process the next block
+            return await this.processBlock(nextBlock, sessionId, config);
+          }
+
           // Update the current block in the session
           await historyService.updateCurrentBlock(sessionId, block.id);
-
+          console.log("it is in detect_intent block");
           // Return a prompt for the user
           return {
             type: "prompt",
