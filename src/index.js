@@ -44,7 +44,7 @@ server.get("/api/config", configController.getConfig);
 // Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`${server.name} listening at ${server.url}`);
+  console.log(`${server.name} listening at http://localhost:${PORT}`);
 
   // Initialize WebSocket server
   const wss = new WebSocketServer({ server: server.server });
