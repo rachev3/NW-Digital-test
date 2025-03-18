@@ -211,10 +211,11 @@ Displays a message to the user:
 
 ```json
 {
-  "id": "block1",
+  "id": "greeting_response",
   "type": "message",
-  "message": "Welcome to our chatbot!",
-  "next": "block2"
+  "message": "Hello there! What would you like to know about today?",
+  "next": "user_input",
+  "intents": []
 }
 ```
 
@@ -224,9 +225,10 @@ Waits for user input before proceeding:
 
 ```json
 {
-  "id": "block2",
+  "id": "user_input",
   "type": "wait",
-  "next": "block3"
+  "next": "detect_main_intent",
+  "intents": []
 }
 ```
 
@@ -236,24 +238,81 @@ Analyzes user input to determine intent and choose the next block:
 
 ```json
 {
-  "id": "block3",
+  "id": "detect_main_intent",
   "type": "detect_intent",
   "intents": [
     {
       "intent": "weather",
-      "keywords": ["weather", "forecast"],
-      "next": "block4"
+      "keywords": ["weather", "temperature", "forecast", "rain", "sunny"],
+      "next": "weather_response"
     },
     {
-      "intent": "travel",
-      "keywords": ["travel", "trip", "offers"],
-      "next": "block5"
+      "intent": "help",
+      "keywords": ["help", "assist", "support", "guide"],
+      "next": "help_response"
     }
   ],
-  "fallback": "block7"
+  "fallback": "unknown_intent"
 }
 ```
 
 ## Testing
 
-Run the test suite with: npm test
+Run the test suite with:
+
+```
+npm test
+```
+
+## Docker Setup
+
+This project includes Docker configuration for easy deployment:
+
+1. Make sure Docker and Docker Compose are installed on your system
+2. Create a `.env` file with your environment variables
+3. Build and start the containers:
+   ```
+   docker-compose up -d
+   ```
+4. To stop the containers:
+   ```
+   docker-compose down
+   ```
+
+The Docker setup includes:
+
+- Node.js application container
+- MongoDB container with data persistence
+- Automatic environment variable configuration
+
+## Project Structure
+
+```
+├── src/
+│   ├── controllers/     # Request handlers for API endpoints
+│   ├── models/          # Database models
+│   ├── services/        # Business logic
+│   ├── utils/           # Helper functions and utilities
+│   └── index.js         # Application entry point
+├── .env                 # Environment variables
+├── Dockerfile           # Docker configuration
+├── docker-compose.yml   # Docker compose configuration
+└── package.json         # Project dependencies
+```
+
+## Environment Variables
+
+| Variable       | Description                         | Default | Required |
+| -------------- | ----------------------------------- | ------- | -------- |
+| PORT           | Port to run the server on           | 3000    | No       |
+| MONGODB_URI    | MongoDB connection string           | -       | Yes      |
+| OPENAI_API_KEY | OpenAI API key for intent detection | -       | Yes      |
+
+## WebSocket Session Management
+
+When a client connects to the WebSocket server:
+
+1. A unique session ID is generated for the connection
+2. The session is stored in the database
+3. All messages in the conversation are linked to this session ID
+4. If the connection is lost, the session can be resumed by providing the session ID
