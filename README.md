@@ -63,57 +63,86 @@ Example request body:
 {
   "metadata": {
     "version": "1.0",
-    "description": "Sample chatbot flow configuration"
+    "description": "Test chatbot flow configuration"
   },
   "blocks": [
     {
-      "id": "block1",
+      "id": "welcome",
       "type": "message",
-      "message": "Welcome to our chatbot!",
-      "next": "block2"
+      "message": "Welcome to the test chatbot! How can I help you today?",
+      "next": "user_input",
+      "intents": []
     },
     {
-      "id": "block2",
+      "id": "user_input",
       "type": "wait",
-      "next": "block3"
+      "next": "detect_main_intent",
+      "intents": []
     },
     {
-      "id": "block3",
+      "id": "detect_main_intent",
       "type": "detect_intent",
       "intents": [
         {
-          "intent": "weather",
-          "keywords": ["weather", "forecast"],
-          "next": "block4"
+          "intent": "greeting",
+          "keywords": ["hello", "hi", "hey", "greetings"],
+          "next": "greeting_response"
         },
         {
-          "intent": "travel",
-          "keywords": ["travel", "trip", "offers"],
-          "next": "block5"
+          "intent": "weather",
+          "keywords": ["weather", "temperature", "forecast", "rain", "sunny"],
+          "next": "weather_response"
+        },
+        {
+          "intent": "help",
+          "keywords": ["help", "assist", "support", "guide"],
+          "next": "help_response"
+        },
+        {
+          "intent": "goodbye",
+          "keywords": ["bye", "goodbye", "exit", "quit", "end"],
+          "next": "goodbye_response"
         }
       ],
-      "fallback": "block7"
+      "fallback": "unknown_intent"
     },
     {
-      "id": "block4",
+      "id": "greeting_response",
       "type": "message",
-      "message": "Fetching weather details...",
-      "next": null
+      "message": "Hello there! What would you like to know about today?",
+      "next": "user_input",
+      "intents": []
     },
     {
-      "id": "block5",
+      "id": "weather_response",
       "type": "message",
-      "message": "Fetching travel offers...",
-      "next": null
+      "message": "The weather today is sunny with a high of 75°F. Is there anything else you'd like to know?",
+      "next": "user_input",
+      "intents": []
     },
     {
-      "id": "block7",
+      "id": "help_response",
       "type": "message",
-      "message": "Sorry, I couldn't understand that. Please try again.",
-      "next": "block3"
+      "message": "I can provide information about the weather, or just chat with you. What would you like to do?",
+      "next": "user_input",
+      "intents": []
+    },
+    {
+      "id": "goodbye_response",
+      "type": "message",
+      "message": "Thank you for chatting! Have a great day!",
+      "next": null,
+      "intents": []
+    },
+    {
+      "id": "unknown_intent",
+      "type": "message",
+      "message": "I'm not sure I understand. Could you try asking in a different way?",
+      "next": "user_input",
+      "intents": []
     }
   ],
-  "initialBlock": "block1"
+  "initialBlock": "welcome"
 }
 ```
 
@@ -224,3 +253,7 @@ Analyzes user input to determine intent and choose the next block:
   "fallback": "block7"
 }
 ```
+
+## Testing
+
+Run the test suite with: npm test

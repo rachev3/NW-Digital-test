@@ -9,6 +9,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Function to determine fallback intent based on keywords
+function getFallbackIntent(message, intents) {
+  for (const intent of intents) {
+    for (const keyword of intent.keywords) {
+      if (message.includes(keyword)) {
+        return intent.intent;
+      }
+    }
+  }
+  return "unknown"; // Default to "unknown" if no keywords match
+}
+
 export const openaiService = {
   /**
    * Detect the intent of a user message
@@ -77,11 +89,12 @@ export const openaiService = {
         } else {
           // If the model returned something not in our list, use keyword fallback
           console.log("OpenAI returned non-valid intent:", detectedIntent);
-          return fallbackIntent;
+          return getFallbackIntent(message, intents);
         }
       } catch (apiError) {
         // If OpenAI API fails (quota exceeded, etc.), use keyword fallback
         console.error("OpenAI API error:", apiError.message);
+        return getFallbackIntent(message, intents);
       }
     } catch (error) {
       console.error("Error detecting intent:", error);
