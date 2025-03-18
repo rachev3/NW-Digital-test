@@ -9,7 +9,6 @@ A flexible, dynamic chatbot backend system built with Node.js, Restify, and WebS
 - **Dynamic chatbot flow** based on JSON configuration
 - **OpenAI integration** for natural language intent detection
 - **Conversation history tracking**
-- **Fallback keyword matching** when OpenAI is unavailable
 - **MongoDB database** for persistent storage
 
 ## Prerequisites
